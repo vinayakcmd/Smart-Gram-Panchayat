@@ -7,17 +7,54 @@ interface LoginProps {
 
 export default function Login({ onNavigate, lang }: LoginProps) {
   const [isAdmin, setIsAdmin] = useState(false);
+  const [isRegistering, setIsRegistering] = useState(false);
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
   const [mobile, setMobile] = useState("");
   const [password, setPassword] = useState("");
   const [remember, setRemember] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [message, setMessage] = useState("");
 
-  const handleLogin = () => {
+  const handleLogin = async () => {
     setLoading(true);
-    setTimeout(() => {
+    setError("");
+    setMessage("");
+    try {
+      const response = await fetch("http://localhost:3001/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ identifier: mobile.replace(/\D/g, ""), password }),
+      });
+      if (!response.ok) throw new Error((await response.json()).error || "Unable to log in");
       setLoading(false);
       onNavigate(isAdmin ? "admin" : "dashboard");
-    }, 1200);
+    } catch (requestError) {
+      setLoading(false);
+      setError(requestError instanceof Error ? requestError.message : "Unable to log in");
+    }
+  };
+
+  const handleRegister = async () => {
+    setLoading(true);
+    setError("");
+    setMessage("");
+    try {
+      const response = await fetch("http://localhost:3001/api/auth/register", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name, mobile, password, email }),
+      });
+      if (!response.ok) throw new Error((await response.json()).error || "Unable to register");
+      setIsRegistering(false);
+      setPassword("");
+      setMessage("Registration successful. You can now log in.");
+    } catch (requestError) {
+      setError(requestError instanceof Error ? requestError.message : "Unable to register");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -68,8 +105,7 @@ export default function Login({ onNavigate, lang }: LoginProps) {
             <div className="font-bold text-gray-900" style={{ fontFamily: "Poppins" }}>Smart Gram Panchayat</div>
           </div>
 
-          {/* Tab Switch */}
-          <div className="flex bg-gray-100 rounded-xl p-1 mb-8">
+          {!isRegistering && <div className="flex bg-gray-100 rounded-xl p-1 mb-8">
             <button
               onClick={() => setIsAdmin(false)}
               className={`flex-1 text-sm font-semibold py-2 rounded-lg transition-all ${!isAdmin ? "bg-white shadow text-green-700" : "text-gray-500"}`}
@@ -82,16 +118,20 @@ export default function Login({ onNavigate, lang }: LoginProps) {
             >
               🛡️ Admin Login
             </button>
-          </div>
+          </div>}
 
           <h3 className="text-2xl font-bold text-gray-900 mb-1" style={{ fontFamily: "Poppins" }}>
-            {isAdmin ? "Admin Portal" : "Welcome Back"}
+            {isRegistering ? "Create your account" : isAdmin ? "Admin Portal" : "Welcome Back"}
           </h3>
           <p className="text-gray-500 text-sm mb-7">
-            {isAdmin ? "Panchayat staff & officials only" : "Login with your registered mobile number"}
+            {isRegistering ? "Register to access Gram Panchayat services" : isAdmin ? "Panchayat staff & officials only" : "Login with your registered mobile number"}
           </p>
 
           <div className="space-y-4">
+            {isRegistering && <>
+              <input type="text" value={name} onChange={(e) => setName(e.target.value)} placeholder="Full name" className="w-full px-4 py-3 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-green-500" />
+              <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="Email address (optional)" className="w-full px-4 py-3 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-green-500" />
+            </>}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1.5">
                 {isAdmin ? "Admin ID / Email" : "Mobile Number / User ID"}
@@ -122,7 +162,7 @@ export default function Login({ onNavigate, lang }: LoginProps) {
                 />
               </div>
             </div>
-            <div className="flex items-center justify-between">
+            {!isRegistering && <div className="flex items-center justify-between">
               <label className="flex items-center gap-2 cursor-pointer">
                 <input
                   type="checkbox"
@@ -133,26 +173,28 @@ export default function Login({ onNavigate, lang }: LoginProps) {
                 <span className="text-sm text-gray-600">Remember me</span>
               </label>
               <button className="text-sm text-green-700 hover:underline font-medium">Forgot Password?</button>
-            </div>
+            </div>}
             <button
-              onClick={handleLogin}
+              onClick={isRegistering ? handleRegister : handleLogin}
               disabled={loading}
               className={`w-full py-3 rounded-xl font-semibold text-white text-sm transition-all shadow-md ${isAdmin ? "bg-blue-700 hover:bg-blue-800" : "bg-green-700 hover:bg-green-800"} disabled:opacity-70`}
             >
               {loading ? (
                 <span className="flex items-center justify-center gap-2">
                   <svg className="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path></svg>
-                  Logging in...
+                  {isRegistering ? "Creating account..." : "Logging in..."}
                 </span>
               ) : (
-                `Login as ${isAdmin ? "Admin" : "Citizen"}`
+                isRegistering ? "Create account" : `Login as ${isAdmin ? "Admin" : "Citizen"}`
               )}
             </button>
           </div>
 
+          {error && <p className="mt-4 text-sm text-red-600 bg-red-50 border border-red-100 rounded-lg p-3">{error}</p>}
+          {message && <p className="mt-4 text-sm text-green-700 bg-green-50 border border-green-100 rounded-lg p-3">{message}</p>}
           <div className="mt-6 text-center">
-            <span className="text-sm text-gray-500">Don&apos;t have an account? </span>
-            <button className="text-sm text-green-700 font-semibold hover:underline">Register here</button>
+            <span className="text-sm text-gray-500">{isRegistering ? "Already have an account? " : "Don't have an account? "}</span>
+            <button onClick={() => { setIsRegistering(!isRegistering); setError(""); setMessage(""); }} className="text-sm text-green-700 font-semibold hover:underline">{isRegistering ? "Login here" : "Register here"}</button>
           </div>
 
           <div className="mt-4 text-center">

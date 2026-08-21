@@ -16,6 +16,7 @@ The API runs at `http://localhost:3001`.
 ## Main endpoints
 
 - `POST /api/auth/login`
+- `POST /api/auth/register`
 - `GET/PATCH /api/me`
 - `GET/POST /api/complaints`
 - `PATCH /api/complaints/:id` (admin)

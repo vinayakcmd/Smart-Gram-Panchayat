@@ -46,6 +46,17 @@ app.post("/api/auth/login", (req, res) => {
   const safeUser = { id: user.id, name: user.name, nameMr: user.name_mr, role: user.role, identifier: user.identifier, email: user.email, mobile: user.mobile, householdId: user.household_id };
   res.json({ token: issueToken({ id: user.id, role: user.role, identifier: user.identifier }), user: safeUser });
 });
+app.post("/api/auth/register", (req, res) => {
+  const { name, mobile, password, email } = req.body as { name?: string; mobile?: string; password?: string; email?: string };
+  const identifier = mobile?.replace(/\D/g, "");
+  if (!name?.trim() || !identifier || !password) return res.status(400).json({ error: "Name, mobile number, and password are required" });
+  if (!/^\d{10}$/.test(identifier)) return res.status(400).json({ error: "Enter a valid 10-digit mobile number" });
+  if (password.length < 6) return res.status(400).json({ error: "Password must be at least 6 characters" });
+  if (db.prepare("SELECT id FROM users WHERE identifier = ?").get(identifier)) return res.status(409).json({ error: "This mobile number is already registered" });
+  const result = db.prepare("INSERT INTO users (name, identifier, password_hash, role, email, mobile) VALUES (?, ?, ?, 'citizen', ?, ?)")
+    .run(name.trim(), identifier, bcrypt.hashSync(password, 10), email?.trim() || null, identifier);
+  res.status(201).json({ success: true, userId: result.lastInsertRowid });
+});
 
 app.get("/api/me", auth, (req: AuthRequest, res) => {
   const user = db.prepare("SELECT id, name, name_mr AS nameMr, identifier, role, email, mobile, household_id AS householdId FROM users WHERE id = ?").get(req.user!.id);
