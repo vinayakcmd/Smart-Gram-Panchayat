@@ -1,6 +1,6 @@
 # Smart Gram Panchayat
 
-React/Vite frontend with a local Express + SQLite API.
+React/Vite frontend with an Express API backed by Supabase Auth and PostgreSQL.
 
 ## Requirements
 
@@ -32,10 +32,9 @@ Frontend: `http://localhost:8443`
 
 API: `http://localhost:3001`
 
-## Demo accounts
+## Accounts
 
-- Citizen: `9876543210` / `demo123`
-- Admin: `admin@rahatgaon.gov.in` / `demo123`
+Citizens register through the app. Admin access is granted by setting the matching row in `public.users` to `role = 'admin'` in Supabase.
 
 ## Production checks
 
@@ -50,5 +49,5 @@ Start the API in production with:
 pnpm backend
 ```
 
-The SQLite database is created automatically in `backend/data/panchayat.sqlite`.
-Keep `backend/data`, `backend/uploads`, and `.env` private on the server.
+Run `supabase/schema.sql` in the Supabase SQL Editor before starting the API.
+Keep `SUPABASE_SERVICE_ROLE_KEY` private on the server. Only `VITE_API_URL` belongs in the frontend environment.

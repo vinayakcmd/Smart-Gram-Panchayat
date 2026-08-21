@@ -6,12 +6,20 @@
 pnpm backend:dev
 ```
 
-The API runs at `http://localhost:3001`.
+The API runs at `http://localhost:3001` and uses Supabase for Auth and PostgreSQL data.
 
-## Demo accounts
+Before starting the API:
 
-- Citizen: identifier `9876543210`, password `demo123`
-- Admin: identifier `admin@rahatgaon.gov.in`, password `demo123`
+1. Create a Supabase project.
+2. Run `supabase/schema.sql` in the Supabase SQL Editor.
+3. Set `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` in `.env`.
+4. Set `VITE_API_URL=http://localhost:3001` for the frontend.
+
+The service-role key must stay on the server and must never be added to frontend environment variables.
+
+## Accounts
+
+Citizens create accounts through the registration form. Create an admin user in Supabase Auth, then set that user's profile role to `admin` using the SQL comment at the bottom of `supabase/schema.sql`.
 
 ## Main endpoints
 

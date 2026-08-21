@@ -1,5 +1,7 @@
 import { useState } from "react";
 
+const apiUrl = import.meta.env.VITE_API_URL || "http://localhost:3001";
+
 interface LoginProps {
   onNavigate: (page: string) => void;
   lang: "en" | "mr";
@@ -22,14 +24,17 @@ export default function Login({ onNavigate, lang }: LoginProps) {
     setError("");
     setMessage("");
     try {
-      const response = await fetch("http://localhost:3001/api/auth/login", {
+      const response = await fetch(`${apiUrl}/api/auth/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ identifier: mobile.replace(/\D/g, ""), password }),
       });
-      if (!response.ok) throw new Error((await response.json()).error || "Unable to log in");
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.error || "Unable to log in");
+      localStorage.setItem("smart-gram-token", result.token);
+      localStorage.setItem("smart-gram-user", JSON.stringify(result.user));
       setLoading(false);
-      onNavigate(isAdmin ? "admin" : "dashboard");
+      onNavigate(result.user.role === "admin" ? "admin" : "dashboard");
     } catch (requestError) {
       setLoading(false);
       setError(requestError instanceof Error ? requestError.message : "Unable to log in");
@@ -41,7 +46,7 @@ export default function Login({ onNavigate, lang }: LoginProps) {
     setError("");
     setMessage("");
     try {
-      const response = await fetch("http://localhost:3001/api/auth/register", {
+      const response = await fetch(`${apiUrl}/api/auth/register`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ name, mobile, password, email }),
