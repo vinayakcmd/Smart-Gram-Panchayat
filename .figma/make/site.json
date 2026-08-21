@@ -1,0 +1,10 @@
+{
+  "description": "Connects villagers and Gram Panchayat members through a user-friendly platform for reporting issues, accessing services, and tracking complaints.",
+  "robots": {
+    "index": false
+  },
+  "accessibility": {
+    "addBypassLinks": false,
+    "ignoreReducedMotion": false
+  }
+}
