@@ -6,7 +6,7 @@ import jwt from "jsonwebtoken";
 import multer from "multer";
 import fs from "node:fs";
 import path from "node:path";
-import { db } from "./db";
+import { db } from "./db.js";
 
 const app = express();
 const port = Number(process.env.API_PORT || 3001);
