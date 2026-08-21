@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { api, type Application } from "../lib/api";
 
 interface DocumentServicesProps {
   lang: "en" | "mr";
@@ -13,17 +14,19 @@ const services = [
   { icon: "📜", name: "Caste Certificate", name_mr: "जात प्रमाणपत्र", desc: "Village-level recommendation letter for caste certificate", desc_mr: "जात प्रमाणपत्रासाठी गाव पातळीवरील शिफारस पत्र", fee: "₹20", days: "3 days" },
 ];
 
-const applications = [
-  { id: "APP-2024-034", type: "Birth Certificate", type_mr: "जन्म प्रमाणपत्र", date: "12 Aug 2024", status: "Approved", statusColor: "bg-green-100 text-green-700" },
-  { id: "APP-2024-021", type: "Residence Certificate", type_mr: "निवास प्रमाणपत्र", date: "5 Aug 2024", status: "Under Review", statusColor: "bg-yellow-100 text-yellow-700" },
-];
-
 export default function DocumentServices({ lang }: DocumentServicesProps) {
   const [showForm, setShowForm] = useState(false);
   const [selectedService, setSelectedService] = useState("");
   const [submitted, setSubmitted] = useState(false);
   const [activeTab, setActiveTab] = useState<"services" | "track">("services");
-  const appId = "APP-2024-" + Math.floor(Math.random() * 900 + 100);
+  const [applications, setApplications] = useState<Application[]>([]);
+  const [purpose, setPurpose] = useState("");
+  const [submittedId, setSubmittedId] = useState("");
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    api.applications().then(setApplications).catch((requestError) => setError(requestError instanceof Error ? requestError.message : "Unable to load applications"));
+  }, []);
 
   const handleApply = (name: string) => {
     setSelectedService(name);
@@ -41,7 +44,7 @@ export default function DocumentServices({ lang }: DocumentServicesProps) {
           <h1 className="text-2xl font-bold text-gray-900" style={{ fontFamily: "Poppins" }}>Apply: {selectedService}</h1>
         </div>
 
-        <form onSubmit={(e) => { e.preventDefault(); setSubmitted(true); }} className="space-y-4">
+        <form onSubmit={async (e) => { e.preventDefault(); setError(""); try { const application = await api.createApplication(selectedService, purpose); setSubmittedId(application.id); setApplications((current) => [application, ...current]); setSubmitted(true); } catch (requestError) { setError(requestError instanceof Error ? requestError.message : "Unable to submit application"); } }} className="space-y-4">
           <div className="bg-white rounded-2xl border border-gray-100 p-6 space-y-4">
             <h3 className="font-semibold text-gray-800 text-sm">Applicant Information</h3>
             <div className="grid sm:grid-cols-2 gap-3">
@@ -64,7 +67,7 @@ export default function DocumentServices({ lang }: DocumentServicesProps) {
             </div>
             <div>
               <label className="text-xs font-medium text-gray-600 mb-1 block">Purpose / Reason</label>
-              <textarea rows={3} placeholder="State the purpose for this document..." className="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-green-400 resize-none" />
+              <textarea rows={3} value={purpose} onChange={(e) => setPurpose(e.target.value)} placeholder="State the purpose for this document..." required className="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-green-400 resize-none" />
             </div>
           </div>
 
@@ -79,6 +82,7 @@ export default function DocumentServices({ lang }: DocumentServicesProps) {
           <button type="submit" className="w-full py-4 bg-green-700 hover:bg-green-800 text-white font-bold rounded-2xl transition-colors shadow-lg text-sm">
             Submit Application
           </button>
+          {error && <p className="text-sm text-red-600 bg-red-50 border border-red-100 rounded-xl p-3">{error}</p>}
         </form>
       </div>
     );
@@ -92,7 +96,7 @@ export default function DocumentServices({ lang }: DocumentServicesProps) {
         <p className="text-gray-500 mb-6">Your {selectedService} application has been received and is under review.</p>
         <div className="bg-green-50 border border-green-200 rounded-2xl p-6 inline-block mb-8">
           <div className="text-sm text-green-700 mb-1">Application ID</div>
-          <div className="text-2xl font-bold text-green-800 font-mono-data">{appId}</div>
+          <div className="text-2xl font-bold text-green-800 font-mono-data">{submittedId}</div>
         </div>
         <div className="flex gap-3 justify-center">
           <button onClick={() => { setShowForm(false); setActiveTab("track"); }} className="bg-green-700 text-white font-semibold px-6 py-3 rounded-xl hover:bg-green-800 transition-colors">Track Application</button>
@@ -150,9 +154,9 @@ export default function DocumentServices({ lang }: DocumentServicesProps) {
                 <div>
                   <div className="text-xs font-mono-data text-gray-400 mb-1">{a.id}</div>
                   <div className={`font-semibold text-gray-900 ${lang === "mr" ? "devanagari" : ""}`}>{lang === "mr" ? a.type_mr : a.type}</div>
-                  <div className="text-xs text-gray-400 mt-1">Submitted: {a.date}</div>
+                  <div className="text-xs text-gray-400 mt-1">Submitted: {new Date(a.created_at).toLocaleDateString()}</div>
                 </div>
-                <span className={`status-badge px-3 py-1.5 rounded-xl font-semibold flex-shrink-0 ${a.statusColor}`}>{a.status}</span>
+                <span className="status-badge px-3 py-1.5 rounded-xl font-semibold flex-shrink-0 bg-yellow-100 text-yellow-700">{a.status}</span>
               </div>
               {/* Mini timeline */}
               <div className="flex items-center gap-2 overflow-x-auto pb-1">

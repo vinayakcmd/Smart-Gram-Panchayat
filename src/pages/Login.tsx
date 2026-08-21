@@ -1,6 +1,5 @@
 import { useState } from "react";
-
-const apiUrl = import.meta.env.VITE_API_URL || "http://localhost:3001";
+import { api } from "../lib/api";
 
 interface LoginProps {
   onNavigate: (page: string) => void;
@@ -24,13 +23,8 @@ export default function Login({ onNavigate, lang }: LoginProps) {
     setError("");
     setMessage("");
     try {
-      const response = await fetch(`${apiUrl}/api/auth/login`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ identifier: mobile.replace(/\D/g, ""), password }),
-      });
-      const result = await response.json();
-      if (!response.ok) throw new Error(result.error || "Unable to log in");
+      const identifier = isAdmin ? mobile.trim() : mobile.replace(/\D/g, "");
+      const result = await api.login(identifier, password);
       localStorage.setItem("smart-gram-token", result.token);
       localStorage.setItem("smart-gram-user", JSON.stringify(result.user));
       setLoading(false);
@@ -46,12 +40,7 @@ export default function Login({ onNavigate, lang }: LoginProps) {
     setError("");
     setMessage("");
     try {
-      const response = await fetch(`${apiUrl}/api/auth/register`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, mobile, password, email }),
-      });
-      if (!response.ok) throw new Error((await response.json()).error || "Unable to register");
+      await api.register({ name, mobile, password, email });
       setIsRegistering(false);
       setPassword("");
       setMessage("Registration successful. You can now log in.");

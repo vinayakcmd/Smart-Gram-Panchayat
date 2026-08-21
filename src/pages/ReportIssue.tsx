@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { api } from "../lib/api";
 
 interface ReportIssueProps {
   onNavigate: (page: string) => void;
@@ -23,12 +24,22 @@ export default function ReportIssue({ onNavigate, lang }: ReportIssueProps) {
   const [title, setTitle] = useState("");
   const [desc, setDesc] = useState("");
   const [uploading, setUploading] = useState(false);
-  const complaintId = "GP-2024-" + Math.floor(Math.random() * 900 + 100);
+  const [complaintId, setComplaintId] = useState("");
+  const [error, setError] = useState("");
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setUploading(true);
-    setTimeout(() => { setUploading(false); setStep("success"); }, 1500);
+    setError("");
+    try {
+      const complaint = await api.createComplaint({ category: selectedCat, title, description: desc, location: "House No. 142, Shivaji Nagar", priority });
+      setComplaintId(complaint.id);
+      setStep("success");
+    } catch (requestError) {
+      setError(requestError instanceof Error ? requestError.message : "Unable to submit complaint");
+    } finally {
+      setUploading(false);
+    }
   };
 
   if (step === "success") {
@@ -202,6 +213,7 @@ export default function ReportIssue({ onNavigate, lang }: ReportIssueProps) {
             <><span>📢</span> <span className={lang === "mr" ? "devanagari" : ""}>{lang === "mr" ? "तक्रार सादर करा" : "Submit Complaint"}</span></>
           )}
         </button>
+        {error && <p className="text-sm text-red-600 bg-red-50 border border-red-100 rounded-lg p-3">{error}</p>}
       </form>
     </div>
   );

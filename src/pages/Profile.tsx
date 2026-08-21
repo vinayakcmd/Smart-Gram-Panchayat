@@ -1,4 +1,6 @@
 import { useState } from "react";
+import { useEffect } from "react";
+import { api } from "../lib/api";
 
 interface ProfileProps {
   lang: "en" | "mr";
@@ -18,10 +20,19 @@ export default function Profile({ lang }: ProfileProps) {
     occupation: "Farmer",
   });
 
-  const handleSave = () => {
-    setSaved(true);
-    setEditing(false);
-    setTimeout(() => setSaved(false), 3000);
+  useEffect(() => {
+    api.me().then((user) => setForm((current) => ({ ...current, name: user.name || current.name, name_mr: user.nameMr || current.name_mr, mobile: user.mobile || current.mobile, email: user.email || current.email }))).catch(() => undefined);
+  }, []);
+
+  const handleSave = async () => {
+    try {
+      await api.updateMe({ name: form.name, email: form.email, mobile: form.mobile });
+      setSaved(true);
+      setEditing(false);
+      setTimeout(() => setSaved(false), 3000);
+    } catch {
+      setSaved(false);
+    }
   };
 
   return (

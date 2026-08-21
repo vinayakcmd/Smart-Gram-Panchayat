@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { api, type NewsItem } from "../lib/api";
 
 interface VillageNewsProps {
   lang: "en" | "mr";
@@ -26,11 +27,17 @@ const newsItems = [
 export default function VillageNews({ lang }: VillageNewsProps) {
   const [selectedCat, setSelectedCat] = useState("All");
   const [search, setSearch] = useState("");
+  const [newsItems, setNewsItems] = useState<NewsItem[]>([]);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    api.news().then(setNewsItems).catch((requestError) => setError(requestError instanceof Error ? requestError.message : "Unable to load news"));
+  }, []);
 
   const filtered = newsItems.filter((n) => {
-    const matchCat = selectedCat === "All" || n.cat === selectedCat;
+    const matchCat = selectedCat === "All" || n.category === selectedCat;
     const q = search.toLowerCase();
-    const matchSearch = !q || n.title.toLowerCase().includes(q) || n.title_mr.includes(q);
+    const matchSearch = !q || n.title.toLowerCase().includes(q);
     return matchCat && matchSearch;
   });
 
@@ -50,6 +57,7 @@ export default function VillageNews({ lang }: VillageNewsProps) {
           />
         </div>
       </div>
+      {error && <div className="text-sm text-red-600 bg-red-50 border border-red-100 rounded-xl p-3">{error}</div>}
 
       {/* Category Filter */}
       <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
@@ -74,19 +82,19 @@ export default function VillageNews({ lang }: VillageNewsProps) {
           <div key={i} className="bg-white rounded-2xl border border-gray-100 overflow-hidden card-hover cursor-pointer">
             <div className="relative">
               <img src={`https://images.unsplash.com/${n.img}?w=400&h=200&fit=crop&auto=format`} alt={n.title} className="w-full h-44 object-cover bg-green-50" />
-              <span className={`absolute top-3 left-3 text-xs font-semibold px-2.5 py-1 rounded-full ${n.catColor}`}>
-                {lang === "mr" ? n.cat_mr : n.cat}
+              <span className="absolute top-3 left-3 text-xs font-semibold px-2.5 py-1 rounded-full bg-blue-100 text-blue-700">
+                {n.category}
               </span>
             </div>
             <div className="p-5">
               <h3 className={`font-semibold text-gray-900 mb-2 leading-snug ${lang === "mr" ? "devanagari" : ""}`} style={{ fontFamily: "Poppins" }}>
-                {lang === "mr" ? n.title_mr : n.title}
+                {n.title}
               </h3>
               <p className={`text-gray-500 text-xs leading-relaxed mb-3 line-clamp-3 ${lang === "mr" ? "devanagari" : ""}`}>
-                {lang === "mr" ? n.desc_mr : n.desc}
+                {n.body}
               </p>
               <div className="flex items-center justify-between">
-                <span className="text-xs text-gray-400">📅 {n.date}</span>
+                <span className="text-xs text-gray-400">📅 {new Date(n.createdAt).toLocaleDateString()}</span>
                 <button className="text-xs text-green-700 font-semibold hover:underline">
                   {lang === "mr" ? <span className="devanagari">अधिक वाचा →</span> : "Read More →"}
                 </button>
